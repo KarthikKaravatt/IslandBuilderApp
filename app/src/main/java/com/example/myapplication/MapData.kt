@@ -2,7 +2,6 @@ package com.example.myapplication
 
 import android.util.Log
 import java.util.Random
-import kotlin.math.log
 
 /**
  * Represents the overall map, and contains a grid of MapElement objects (accessible using the
@@ -14,7 +13,12 @@ import kotlin.math.log
  * There is also a regenerate() method. The map is randomly-generated, and this method will invoke
  * the algorithm again to replace all the map data with a new randomly-generated grid.
  */
-class MapData protected constructor(private var grid: Array<Array<MapElement?>>) {
+const val HEIGHT_RANGE = 256
+const val WATER_LEVEL = 112
+const val INLAND_BIAS = 24
+const val AREA_SIZE = 1
+const val SMOOTHING_ITERATIONS = 6
+open class MapData protected constructor(private var grid: Array<Array<MapElement?>>) {
     fun regenerate() {
         grid = generateGrid()
     }
@@ -41,20 +45,13 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
         }
 
         private fun generateGrid(): Array<Array<MapElement?>> {
-            val HEIGHT_RANGE = 256
-            val WATER_LEVEL = 112
-            val INLAND_BIAS = 24
-            val AREA_SIZE = 1
-            val SMOOTHING_ITERATIONS = 6
             var heightField = Array(HEIGHT) { IntArray(WIDTH) }
             for (i in 0 until HEIGHT) {
                 for (j in 0 until WIDTH) {
                     heightField[i][j] = (rng.nextInt(HEIGHT_RANGE)
-                            + INLAND_BIAS * (Math.min(
-                        Math.min(i, j),
-                        Math.min(HEIGHT - i - 1, WIDTH - j - 1)
-                    ) -
-                            Math.min(HEIGHT, WIDTH) / 4))
+                            + INLAND_BIAS * (i.coerceAtMost(j)
+                        .coerceAtMost((HEIGHT - i - 1).coerceAtMost(WIDTH - j - 1)) -
+                            HEIGHT.coerceAtMost(WIDTH) / 4))
                 }
             }
             var newHf = Array(HEIGHT) { IntArray(WIDTH) }
@@ -63,14 +60,8 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
                     for (j in 0 until WIDTH) {
                         var areaSize = 0
                         var heightSum = 0
-                        for (areaI in Math.max(0, i - AREA_SIZE) until Math.min(
-                            HEIGHT,
-                            i + AREA_SIZE + 1
-                        )) {
-                            for (areaJ in Math.max(0, j - AREA_SIZE) until Math.min(
-                                WIDTH,
-                                j + AREA_SIZE + 1
-                            )) {
+                        for (areaI in 0.coerceAtLeast(i - AREA_SIZE) until HEIGHT.coerceAtMost(i + AREA_SIZE + 1)) {
+                            for (areaJ in 0.coerceAtLeast(j - AREA_SIZE) until WIDTH.coerceAtMost(j + AREA_SIZE + 1)) {
                                 areaSize++
                                 heightSum += heightField[areaI][areaJ]
                             }
