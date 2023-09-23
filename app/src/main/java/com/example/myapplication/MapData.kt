@@ -1,6 +1,10 @@
 package com.example.myapplication
 
 import android.util.Log
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.util.Random
 
 /**
@@ -18,16 +22,17 @@ const val WATER_LEVEL = 112
 const val INLAND_BIAS = 24
 const val AREA_SIZE = 1
 const val SMOOTHING_ITERATIONS = 6
-open class MapData protected constructor(private var grid: Array<Array<MapElement?>>) {
+open class MapData protected constructor(private var grid: MutableState<Array<Array<MapElement?>>>) {
     fun regenerate() {
-        grid = generateGrid()
+        grid.value = generateGrid()
     }
 
     operator fun get(i: Int, j: Int): MapElement? {
-        return grid[i][j]
+        return grid.value[i][j]
     }
 
     companion object {
+        private var instance: MapData? by mutableStateOf(null)
         const val WIDTH = 30
         const val HEIGHT = 10
         private val WATER = R.drawable.ic_water
@@ -36,12 +41,11 @@ open class MapData protected constructor(private var grid: Array<Array<MapElemen
             R.drawable.ic_grass3, R.drawable.ic_grass4
         )
         private val rng = Random()
-        private var instance: MapData? = null
-        fun get(): MapData? {
+        fun get(): MutableState<MapData?> {
             if (instance == null) {
-                instance = MapData(generateGrid())
+                instance = MapData(mutableStateOf( generateGrid()))
             }
-            return instance
+            return mutableStateOf(instance)
         }
 
         private fun generateGrid(): Array<Array<MapElement?>> {

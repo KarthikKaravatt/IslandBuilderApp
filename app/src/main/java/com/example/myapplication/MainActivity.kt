@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.lifecycle.viewmodel.viewModelFactory
 
 /**
  * This is the main entry point for the app.
@@ -38,11 +41,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Column {
-                GameMap()
-                ItemSelection()
-            }
+            MainLayout()
         }
+    }
+}
+@Composable
+fun MainLayout() {
+    Column {
+        GameMap()
+        ItemSelection()
     }
 }
 
@@ -54,15 +61,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GameMap() {
     val mapData by remember { mutableStateOf( MapData.get()) }
-    LazyRow {
+    LazyRow(state = rememberLazyListState()) {
         items(MapData.WIDTH) { colIndex ->
             BoxWithConstraints {
                 // The size of each cell is the minimum of the maxWidth and maxHeight divided by the number of cells.
                 // And then divided by 1.25 to make the cells a bit smaller for the structures row
                 val cellSize = min(maxWidth, maxHeight) / (MapData.HEIGHT * 1.25f)
-                Column {
-                    repeat(MapData.HEIGHT) { rowIndex ->
-                        val mapElement = mapData?.get(rowIndex, colIndex)
+                LazyColumn(state = rememberLazyListState()) {
+                    items(MapData.HEIGHT) { rowIndex ->
+                        val mapElement = mapData.value?.get(rowIndex, colIndex)
                         Box(modifier = Modifier.size(cellSize)) {
                             if (mapElement != null) {
                                 Image(
@@ -131,12 +138,12 @@ fun ItemSelection() {
         "Tree 3" to R.drawable.ic_tree3,
         "Tree 4" to R.drawable.ic_tree4
     )
-
     LazyRow(modifier = Modifier.padding(2.dp)) {
         item {
+            val mapData by remember { mutableStateOf( MapData.get()) }
             Button(
                 onClick = {
-                    MapData.get()?.regenerate()
+                          mapData.value?.regenerate()
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -167,6 +174,5 @@ fun ItemSelection() {
             }
         }
     }
-
 
 }
