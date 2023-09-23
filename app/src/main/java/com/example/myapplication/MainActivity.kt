@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,7 +26,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            GameMap()
+            Column {
+                GameMap()
+                ItemSelection()
+            }
         }
     }
 }
@@ -39,7 +41,7 @@ fun GameMap() {
     LazyRow {
         items(MapData.WIDTH) { colIndex ->
             BoxWithConstraints {
-                val boxSize = min(maxWidth, maxHeight) / (MapData.HEIGHT + 2)
+                val boxSize = min(maxWidth, maxHeight) / (MapData.HEIGHT + 1.5f)
                 Column {
                     repeat(MapData.HEIGHT) { rowIndex ->
                         val mapElement = mapData?.get(rowIndex, colIndex)
@@ -79,6 +81,20 @@ fun GameMap() {
                     }
                 }
             }
+        }
+    }
+}
+@Composable
+fun ItemSelection(){
+    LazyRow(modifier = Modifier.padding(2.dp)) {
+        items(100) {
+            Spacer(modifier = Modifier.padding(2.dp))
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_background),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+            )
         }
     }
 }
