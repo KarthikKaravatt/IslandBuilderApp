@@ -1,6 +1,8 @@
 package com.example.myapplication
 
+import android.util.Log
 import java.util.Random
+import kotlin.math.log
 
 /**
  * Represents the overall map, and contains a grid of MapElement objects (accessible using the
@@ -43,7 +45,7 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
             val WATER_LEVEL = 112
             val INLAND_BIAS = 24
             val AREA_SIZE = 1
-            val SMOOTHING_ITERATIONS = 2
+            val SMOOTHING_ITERATIONS = 6
             var heightField = Array(HEIGHT) { IntArray(WIDTH) }
             for (i in 0 until HEIGHT) {
                 for (j in 0 until WIDTH) {
@@ -83,7 +85,7 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
             val grid = Array(HEIGHT) { arrayOfNulls<MapElement>(WIDTH) }
             for (i in 0 until HEIGHT) {
                 for (j in 0 until WIDTH) {
-                    var element: MapElement
+                    Log.d("MapData", "i = $i, j = $j, height = ${heightField[i][j]}")
                     if (heightField[i][j] >= WATER_LEVEL) {
                         val waterN = i == 0 || heightField[i - 1][j] < WATER_LEVEL
                         val waterE = j == WIDTH - 1 || heightField[i][j + 1] < WATER_LEVEL
@@ -98,6 +100,7 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
                             i == HEIGHT - 1 || j == WIDTH - 1 || heightField[i + 1][j + 1] < WATER_LEVEL
                         val coast = waterN || waterE || waterS || waterW ||
                                 waterNW || waterNE || waterSW || waterSE
+                        Log.d("MapData", "coast = $coast waterN = $waterN waterE = $waterE waterS = $waterS waterW = $waterW waterNW = $waterNW waterNE = $waterNE waterSW = $waterSW waterSE = $waterSE")
                         grid[i][j] = MapElement(
                             !coast,
                             choose(
@@ -136,8 +139,7 @@ class MapData protected constructor(private var grid: Array<Array<MapElement?>>)
             nsWater: Boolean, ewWater: Boolean, diagWater: Boolean,
             nsCoastId: Int, ewCoastId: Int, convexCoastId: Int, concaveCoastId: Int
         ): Int {
-            val id: Int
-            id = if (nsWater) {
+            val id: Int = if (nsWater) {
                 if (ewWater) {
                     convexCoastId
                 } else {

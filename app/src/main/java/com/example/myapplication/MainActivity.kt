@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,12 +42,39 @@ fun GameMap() {
                 val boxSize = min(maxWidth, maxHeight) / (MapData.HEIGHT + 2)
                 Column {
                     repeat(MapData.HEIGHT) { rowIndex ->
+                        val mapElement = mapData?.get(rowIndex, colIndex)
                         Box(modifier = Modifier.size(boxSize)) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_grass1),
-                                contentDescription = null,
-                                modifier = Modifier.padding(1.dp).fillMaxSize()
-                            )
+                            if (mapElement != null) {
+                                Image(
+                                    painter = painterResource(id =  mapElement.northWest),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .size((boxSize.value * 0.51).dp)
+                                )
+                                Image(
+                                    painter = painterResource(id =  mapElement.northEast),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .size((boxSize.value * 0.51).dp)
+                                )
+                                Image(
+                                    painter = painterResource(id =  mapElement.southWest),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .size((boxSize.value * 0.51).dp)
+                                )
+                                Image(
+                                    painter = painterResource(id =  mapElement.southEast),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .size((boxSize.value * 0.51).dp)
+                                )
+                            }
+
                         }
                     }
                 }
