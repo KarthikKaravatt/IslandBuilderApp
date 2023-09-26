@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -78,9 +79,10 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MainLayout() {
+        val reset =  rememberSaveable { mutableStateOf(false) }
         Column(modifier = Modifier.fillMaxSize()) {
-            GameMap(modifier = Modifier.weight(0.8f))
-            ItemSelection(modifier = Modifier.weight(0.2f))
+            GameMap(modifier = Modifier.weight(0.8f), reset)
+            ItemSelection(modifier = Modifier.weight(0.2f), reset)
         }
     }
 
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
      * This is equivalent to a RecyclerView in Views .
      */
     @Composable
-    private fun GameMap(modifier: Modifier = Modifier) {
+    private fun GameMap(modifier: Modifier = Modifier, reset: MutableState<Boolean>) {
         val mapData by remember { mutableStateOf(MapData.get()) }
         LazyRow(state = rememberLazyListState(), modifier = modifier.zIndex(0f)) {
             items(MapData.WIDTH) { colIndex ->
@@ -110,7 +112,8 @@ class MainActivity : ComponentActivity() {
                                 mapElement = mapElement,
                                 structure = structure,
                                 currentStructure = currentStructure,
-                                hasStructure = hasStructure
+                                hasStructure = hasStructure,
+                                reset = reset
                             )
                         }
                     }
@@ -125,15 +128,20 @@ class MainActivity : ComponentActivity() {
         mapElement: MapElement?,
         structure: MutableState<Structure?>,
         currentStructure: MutableState<Int?>,
-        hasStructure: MutableState<Boolean>
+        hasStructure: MutableState<Boolean>,
+        reset: MutableState<Boolean>
     ) {
         if (mapElement == null) {
             return
         }
+        val currentStructureRemember by rememberSaveable { currentStructure }
         Box(
             modifier = Modifier
                 .size(cellSize)
                 .clickable {
+                    if(reset.value){
+                       reset.value = false
+                    }
                     structure.value = pressedStructure?.let { Structure(it, "") }
                     currentStructure.value = pressedStructure
                     hasStructure.value = true
@@ -172,28 +180,36 @@ class MainActivity : ComponentActivity() {
                     .size((cellSize.value * 0.51).dp)
                     .zIndex(1f)
             )
-            if (hasStructure.value) {
-                currentStructure.value?.let { painterResource(id = it) }
-                    ?.let {
+            if(!reset.value) {
+
+                if (hasStructure.value) {
+                    currentStructureRemember?.let {
                         Image(
-                            painter = it,
+                            painter = painterResource(id = it),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .zIndex(2f)
                         )
                     }
+                }
+            }
+            else{
+                hasStructure.value = false
+                currentStructure.value = null
+                structure.value = null
             }
         }
     }
 
     @Composable
-    private fun ItemSelection(modifier: Modifier = Modifier) {
+    private fun ItemSelection(modifier: Modifier = Modifier, reset: MutableState<Boolean>) {
         LazyRow(modifier = modifier.padding(2.dp)) {
             item {
                 val mapData by remember { mutableStateOf(MapData.get()) }
                 Button(
                     onClick = {
+                        reset.value = true
                         mapData.value?.regenerate()
                     },
                     modifier = Modifier.fillMaxSize()
