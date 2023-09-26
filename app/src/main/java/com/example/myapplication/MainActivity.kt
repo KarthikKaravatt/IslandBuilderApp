@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * This is the main entry point for the app.
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
         "Tree 3" to R.drawable.ic_tree3,
         "Tree 4" to R.drawable.ic_tree4
     )
-    private var pressedStructure: Int? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -78,9 +79,24 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun MainLayout() {
+        val currentStructureArray: MutableStateFlow<Array<Array<MutableList<MutableState<Int?>>>>> =
+            remember{
+                MutableStateFlow(
+                    Array(MapData.HEIGHT) {
+                        Array(MapData.WIDTH) {
+                            mutableListOf()
+                        }
+                    }
+                )
+            }
+        val pressedStructure = remember { mutableStateOf<Int?>(null) }
         Column(modifier = Modifier.fillMaxSize()) {
-            GameMap(modifier = Modifier.weight(0.8f))
-            ItemSelection(modifier = Modifier.weight(0.2f))
+            GameMap(modifier = Modifier.weight(0.8f), pressedStructure = pressedStructure, currentStructureArray = currentStructureArray)
+            ItemSelection(
+                modifier = Modifier.weight(0.2f),
+                pressedStructure = pressedStructure,
+                currentStructureArray = currentStructureArray
+            )
         }
     }
 
@@ -90,8 +106,13 @@ class MainActivity : ComponentActivity() {
      * This is equivalent to a RecyclerView in Views .
      */
     @Composable
-    private fun GameMap(modifier: Modifier = Modifier) {
+    private fun GameMap(
+        modifier: Modifier = Modifier,
+        pressedStructure: MutableState<Int?>,
+        currentStructureArray: MutableStateFlow<Array<Array<MutableList<MutableState<Int?>>>>>
+    ) {
         val mapData by remember { mutableStateOf(MapData.get()) }
+        val currentStructureArrayVal = remember{currentStructureArray.value}
         LazyRow(state = rememberLazyListState(), modifier = modifier.zIndex(0f)) {
             items(MapData.WIDTH) { colIndex ->
                 BoxWithConstraints {
@@ -104,13 +125,13 @@ class MainActivity : ComponentActivity() {
                             val structure = remember { mutableStateOf(mapElement?.structure) }
                             val currentStructure =
                                 rememberSaveable { mutableStateOf(mapElement?.structure?.drawableId) }
-                            val hasStructure = rememberSaveable { mutableStateOf(false) }
+                            currentStructureArrayVal[rowIndex][colIndex].add(currentStructure)
                             MapCell(
                                 cellSize = cellSize,
                                 mapElement = mapElement,
                                 structure = structure,
                                 currentStructure = currentStructure,
-                                hasStructure = hasStructure
+                                pressedStructure = pressedStructure
                             )
                         }
                     }
@@ -125,7 +146,7 @@ class MainActivity : ComponentActivity() {
         mapElement: MapElement?,
         structure: MutableState<Structure?>,
         currentStructure: MutableState<Int?>,
-        hasStructure: MutableState<Boolean>
+        pressedStructure: MutableState<Int?>
     ) {
         if (mapElement == null) {
             return
@@ -134,11 +155,11 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier
                 .size(cellSize)
                 .clickable {
-                    structure.value = pressedStructure?.let { Structure(it, "") }
-                    currentStructure.value = pressedStructure
-                    hasStructure.value = true
-                    pressedStructure = null
-                }
+                    structure.value =
+                        pressedStructure.let { it.value?.let { it1 -> Structure(it1, "") } }
+                    currentStructure.value = pressedStructure.value
+                    pressedStructure.value = null
+                },
         ) {
             Image(
                 painter = painterResource(id = mapElement.northWest),
@@ -172,7 +193,7 @@ class MainActivity : ComponentActivity() {
                     .size((cellSize.value * 0.51).dp)
                     .zIndex(1f)
             )
-            if (hasStructure.value) {
+            if (structure.value != null) {
                 currentStructure.value?.let { painterResource(id = it) }
                     ?.let {
                         Image(
@@ -188,13 +209,26 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun ItemSelection(modifier: Modifier = Modifier) {
+    private fun ItemSelection(
+        modifier: Modifier = Modifier,
+        pressedStructure: MutableState<Int?>,
+        currentStructureArray: MutableStateFlow<Array<Array<MutableList<MutableState<Int?>>>>>
+    ) {
         LazyRow(modifier = modifier.padding(2.dp)) {
             item {
-                val mapData by remember { mutableStateOf(MapData.get()) }
+                var mapData = MapData.get()
                 Button(
                     onClick = {
                         mapData.value?.regenerate()
+                        mapData = MapData.get()
+                        currentStructureArray.value.forEach { row ->
+                            row.forEach { cell ->
+                                cell.forEach { structure ->
+                                    structure.value = null
+                                }
+                            }
+                        }
+                        pressedStructure.value = null
                     },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -206,14 +240,15 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.padding(15.dp))
                 DraggableStructure(
                     img = structureImages.values.elementAt(index),
-                    name = structureImages.keys.elementAt(index)
+                    name = structureImages.keys.elementAt(index),
+                    pressedStructure = pressedStructure
                 )
             }
         }
     }
 
     @Composable
-    private fun DraggableStructure(img: Int, name: String) {
+    private fun DraggableStructure(img: Int, name: String, pressedStructure: MutableState<Int?>) {
 //        var offsetX by remember { mutableFloatStateOf(0f) }
 //        var offsetY by remember { mutableFloatStateOf(0f) }
 //        var startOffsetX by remember { mutableFloatStateOf(0f) }
@@ -253,7 +288,7 @@ class MainActivity : ComponentActivity() {
                         .height(imageSize)
                         .fillMaxSize()
                         .clickable {
-                            pressedStructure = img
+                            pressedStructure.value = img
                         }
                 )
                 Text(
