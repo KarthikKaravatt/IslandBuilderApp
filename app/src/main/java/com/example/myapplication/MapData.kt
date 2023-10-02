@@ -22,6 +22,7 @@ const val WATER_LEVEL = 112
 const val INLAND_BIAS = 24
 const val AREA_SIZE = 1
 const val SMOOTHING_ITERATIONS = 6
+
 open class MapData protected constructor(private var grid: MutableState<Array<Array<MapElement?>>>) {
     fun regenerate() {
         grid.value = generateGrid()
@@ -43,7 +44,7 @@ open class MapData protected constructor(private var grid: MutableState<Array<Ar
         private val rng = Random()
         fun get(): MutableState<MapData?> {
             if (instance == null) {
-                instance = MapData(mutableStateOf( generateGrid()))
+                instance = MapData(mutableStateOf(generateGrid()))
             }
             return mutableStateOf(instance)
         }
@@ -95,7 +96,10 @@ open class MapData protected constructor(private var grid: MutableState<Array<Ar
                             i == HEIGHT - 1 || j == WIDTH - 1 || heightField[i + 1][j + 1] < WATER_LEVEL
                         val coast = waterN || waterE || waterS || waterW ||
                                 waterNW || waterNE || waterSW || waterSE
-                        Log.d("MapData", "coast = $coast waterN = $waterN waterE = $waterE waterS = $waterS waterW = $waterW waterNW = $waterNW waterNE = $waterNE waterSW = $waterSW waterSE = $waterSE")
+                        Log.d(
+                            "MapData",
+                            "coast = $coast waterN = $waterN waterE = $waterE waterS = $waterS waterW = $waterW waterNW = $waterNW waterNE = $waterNE waterSW = $waterSW waterSE = $waterSE"
+                        )
                         grid[i][j] = MapElement(
                             !coast,
                             choose(

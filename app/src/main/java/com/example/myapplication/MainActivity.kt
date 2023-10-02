@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
                     .fillMaxWidth()
                     .weight(0.8f)
             ) {
-                GameMap(modifier = Modifier, reset, draggedItem = draggedItem)
+                GameMap(modifier = Modifier, reset)
             }
             val configuration = resources.configuration
             var weight = 0.1f
@@ -134,8 +134,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun GameMap(
         modifier: Modifier = Modifier,
-        reset: MutableState<Boolean>,
-        draggedItem: MutableState<DraggedItem>
+        reset: MutableState<Boolean>
     ) {
         BoxWithConstraints(
             modifier = modifier
@@ -169,27 +168,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            // Your other UI elements go here
-
-            if (draggedItem.value.item.value != null) {
-                val id = draggedItem.value.item.value
-                assert(id != null)
-                id?.let { painterResource(id = it) }?.let {
-                    Image(painter = it,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .offset {
-                                IntOffset(
-                                    draggedItem.value.xOffset.value.roundToInt(),
-                                    draggedItem.value.yOffset.value.roundToInt()
-                                )
-                            }
-                            .size(50.dp)
-                            .zIndex(10f)
-                    )
-                }
-            }
-
         }
 
     }
@@ -211,11 +189,11 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier
                 .size(cellSize)
                 .clickable {
-                    if(mapElement.isBuildable){
+                    if (mapElement.isBuildable) {
                         if (reset.value) {
                             reset.value = false
                         }
-                        structure.value = pressedStructure?.let { Structure(it, "") }
+                        structure.value = pressedStructure?.let { Structure(it) }
                         currentStructure.value = pressedStructure
                         hasStructure.value = true
                         pressedStructure = null
